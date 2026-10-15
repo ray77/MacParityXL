@@ -53,7 +53,9 @@ xcodegen generate
 open MacParityXL.xcodeproj
 ```
 
-## Licenses of bundled engines
+## License
+
+MacParityXL's own code is MIT licensed, see [LICENSE](LICENSE). The bundled engines keep their licenses:
 
 - par2cmdline-turbo: GPL-2.0, shipped as a separate executable in `Contents/Helpers`.
 - UnRAR: RARLAB UnRAR license (extraction only; may not be used to re-create the RAR compression
