@@ -67,14 +67,27 @@ enum ParSetStatus: Equatable {
 final class ParSetModel {
     let format: ParFormat
     private(set) var parFile: URL? {
-        didSet { if parFile != oldValue, let parFile { onParFileChanged?(parFile) } }
+        didSet {
+            guard parFile != oldValue else { return }
+            refreshRecoveryFiles()
+            if let parFile { onParFileChanged?(parFile) }
+        }
     }
     private(set) var files: [TargetFile] = []
     private(set) var statistics = Par2Statistics()
     private(set) var status: ParSetStatus = .idle {
         // A new phase starts from zero; otherwise the bar shows the previous phase until the engine reports.
-        didSet { if status != oldValue { progress = nil } }
+        didSet {
+            guard status != oldValue else { return }
+            progress = nil
+            // Runs start and end with a status change; repairs and creation add or remove par files.
+            refreshRecoveryFiles()
+        }
     }
+    /// Sizes of the data files, from the par file (so known for missing files too) or from disk.
+    private(set) var fileSizes: [String: Int64] = [:]
+    /// The set's own par files, listed dimmed below the data files.
+    private(set) var recoveryFiles: [RecoveryFile] = []
     private(set) var progress: (phase: String, percent: Double)?
     private(set) var rawOutput = ""
     private(set) var isRunning = false {
@@ -122,14 +135,18 @@ final class ParSetModel {
         do {
             switch format {
             case .par2:
-                files = try Par2FileReader.fileDescriptions(in: parFile).map { TargetFile(name: $0.name) }
+                let descriptions = try Par2FileReader.fileDescriptions(in: parFile)
+                files = descriptions.map { TargetFile(name: $0.name) }
+                fileSizes = Dictionary(descriptions.map { ($0.name, Int64($0.length)) }, uniquingKeysWith: { first, _ in first })
             case .par1:
-                files = try Par1Header.read(from: parFile, verifyControlHash: false).entries
-                    .map { TargetFile(name: $0.name, contributesToParity: $0.isProtected) }
+                let entries = try Par1Header.read(from: parFile, verifyControlHash: false).entries
+                files = entries.map { TargetFile(name: $0.name, contributesToParity: $0.isProtected) }
+                fileSizes = Dictionary(entries.map { ($0.name, Int64($0.size)) }, uniquingKeysWith: { first, _ in first })
             }
         } catch {
             status = .invalidParFile
         }
+        refreshRecoveryFiles()
     }
 
     /// Verifies the set and repairs it if possible, then runs post-processing.
@@ -447,12 +464,34 @@ final class ParSetModel {
             try? FileManager.default.trashItem(at: backup, resultingItemURL: nil)
         }
         backupFiles = []
-        let folder = parFile.deletingLastPathComponent()
-        let base = parFile.deletingPathExtension().lastPathComponent
-        let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
-        for url in contents where Self.isParFile(url, format: format) && url.deletingPathExtension().lastPathComponent.hasPrefix(base) {
+        for url in parFilesOfSet(parFile) {
             try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
         }
+        refreshRecoveryFiles()
+    }
+
+    /// The index file and all recovery files that belong to `parFile`'s set.
+    private func parFilesOfSet(_ parFile: URL) -> [URL] {
+        let folder = parFile.deletingLastPathComponent()
+        let base = parFile.deletingPathExtension().lastPathComponent
+        let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.fileSizeKey])) ?? []
+        return contents.filter { url in
+            let name = url.deletingPathExtension().lastPathComponent
+            return Self.isParFile(url, format: format) && (name == base || name.hasPrefix(base + "."))
+        }
+    }
+
+    func refreshRecoveryFiles() {
+        guard let parFile else {
+            recoveryFiles = []
+            return
+        }
+        recoveryFiles = parFilesOfSet(parFile)
+            .map { url in
+                let size = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+                return RecoveryFile(name: url.lastPathComponent, size: size, kind: RecoveryFile.Kind(fileName: url.lastPathComponent))
+            }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     /// `.par2` for PAR2 sets; `.par` and `.p01`, `.p02`, … for PAR1 sets.
@@ -468,22 +507,87 @@ final class ParSetModel {
 
     // MARK: - Creating a new set
 
+    /// Adds files and folders. A folder adds the files inside it: for PAR2 including
+    /// subfolders (stored as relative paths), for PAR1 only the files directly inside,
+    /// since PAR1 has no paths. A single folder added to an empty set becomes the set's folder.
     func addFiles(_ urls: [URL]) -> String? {
-        let regular = urls.filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
-        guard let firstFolder = regular.first?.deletingLastPathComponent() else { return nil }
-        let folder = sourceFolder ?? firstFolder
-        guard regular.allSatisfy({ $0.deletingLastPathComponent() == folder }) else {
-            return String(localized: "All files of a PAR set must be in the same folder.")
+        let urls = urls.map(\.standardizedFileURL)
+        guard let first = urls.first else { return nil }
+        let folder = sourceFolder ?? (urls.count == 1 && Self.isDirectory(first) ? first : first.deletingLastPathComponent())
+
+        var found: [String] = []
+        var skippedSubfolders = false
+        for url in urls {
+            guard let relative = Self.relativePath(of: url, in: folder),
+                  format == .par2 || !relative.contains("/") else {
+                return format == .par2
+                    ? String(localized: "All files of a PAR2 set must be in one folder or its subfolders.")
+                    : String(localized: "All files of a PAR set must be in the same folder.")
+            }
+            if Self.isDirectory(url) {
+                let (names, skipped) = filesInside(url, relativeTo: folder)
+                found += names
+                skippedSubfolders = skippedSubfolders || skipped
+            } else if (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true, !relative.isEmpty {
+                found.append(relative)
+            }
         }
-        let newNames = regular.map(\.lastPathComponent).filter { name in !files.contains { $0.name == name } }
+
+        var seen = Set(files.map(\.name))
+        let newNames = found.filter { seen.insert($0).inserted }
         guard files.count + newNames.count <= format.maximumFileCount else {
             let room = format.maximumFileCount - files.count
             return String(localized: "Too many files; the set has room for \(room) more.")
         }
+        guard !newNames.isEmpty else {
+            return skippedSubfolders ? String(localized: "PAR1 sets can't contain subfolders; their files were skipped.") : nil
+        }
         sourceFolder = folder
         files += newNames.map { TargetFile(name: $0, state: .notInParSet) }
+        for name in newNames {
+            let size = (try? folder.appending(path: name).resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            fileSizes[name] = Int64(size)
+        }
         files.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        return nil
+        return skippedSubfolders ? String(localized: "PAR1 sets can't contain subfolders; their files were skipped.") : nil
+    }
+
+    /// Regular, visible files in `directory` (recursively for PAR2), as paths relative to `base`.
+    /// Existing PAR files are left out.
+    private func filesInside(_ directory: URL, relativeTo base: URL) -> (names: [String], skippedSubfolders: Bool) {
+        var options: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants]
+        if format == .par1 { options.insert(.skipsSubdirectoryDescendants) }
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey], options: options
+        ) else { return ([], false) }
+
+        var names: [String] = []
+        var skippedSubfolders = false
+        for case let url as URL in enumerator {
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
+            if values?.isDirectory == true {
+                if format == .par1 { skippedSubfolders = true }
+                continue
+            }
+            guard values?.isRegularFile == true,
+                  !Self.isParFile(url, format: .par2), !Self.isParFile(url, format: .par1),
+                  let relative = Self.relativePath(of: url.standardizedFileURL, in: base)
+            else { continue }
+            names.append(relative)
+        }
+        return (names, skippedSubfolders)
+    }
+
+    private static func isDirectory(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+    }
+
+    /// `url`'s path below `folder` ("" for the folder itself), or nil if it's outside.
+    private static func relativePath(of url: URL, in folder: URL) -> String? {
+        let base = folder.path.hasSuffix("/") ? folder.path : folder.path + "/"
+        if url.path == folder.path { return "" }
+        guard url.path.hasPrefix(base) else { return nil }
+        return String(url.path.dropFirst(base.count))
     }
 
     func removeFiles(named names: Set<String>) {
@@ -494,7 +598,7 @@ final class ParSetModel {
 
     /// File name suggestion: the common base name of all files, if they share one.
     var suggestedParFileName: String {
-        let bases = Set(files.map { ($0.name as NSString).deletingPathExtension })
+        let bases = Set(files.map { (($0.name as NSString).lastPathComponent as NSString).deletingPathExtension })
         // Several unrelated files: name the set after their folder, like most posters do.
         let base = bases.count == 1 ? bases.first! : sourceFolder?.lastPathComponent ?? String(localized: "Untitled")
         return base + (format == .par1 ? ".par" : ".par2")
@@ -543,4 +647,33 @@ final class ParSetModel {
             }
         }
     }
+}
+
+/// A par file of the set itself, shown in the file list for orientation.
+struct RecoveryFile: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case index
+        /// PAR2 volume with this many recovery blocks ("name.vol07+08.par2").
+        case blocks(Int)
+        /// PAR1 volume number ("name.p03").
+        case volume(Int)
+
+        init(fileName: String) {
+            let lower = fileName.lowercased()
+            if let match = lower.range(of: #"\.vol[0-9]+\+([0-9]+)\.par2$"#, options: .regularExpression),
+               let plus = lower[match].firstIndex(of: "+") {
+                self = .blocks(Int(lower[lower.index(after: plus)...].prefix(while: \.isNumber)) ?? 0)
+            } else if let ext = lower.split(separator: ".").last, ext.count >= 3, ext.first == "p",
+                      ext.dropFirst().allSatisfy(\.isNumber), let number = Int(ext.dropFirst()) {
+                self = .volume(number)
+            } else {
+                self = .index
+            }
+        }
+    }
+
+    var id: String { name }
+    let name: String
+    let size: Int64
+    let kind: Kind
 }

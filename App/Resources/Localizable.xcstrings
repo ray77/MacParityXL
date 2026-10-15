@@ -377,6 +377,34 @@
         }
       }
     },
+    "All files of a PAR2 set must be in one folder or its subfolders.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Dateien eines PAR2-Sets müssen in einem Ordner oder seinen Unterordnern liegen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tous les fichiers d’un jeu PAR2 doivent se trouver dans un même dossier ou ses sous-dossiers."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los archivos de un conjunto PAR2 deben estar en una carpeta o sus subcarpetas."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі файли набору PAR2 мають бути в одній папці або її підпапках."
+          }
+        }
+      }
+    },
     "Apply Rule": {
       "localizations": {
         "de": {
@@ -1749,6 +1777,34 @@
         }
       }
     },
+    "Drop files or folders here": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dateien oder Ordner hierher ziehen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déposez des fichiers ou des dossiers ici"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suelta archivos o carpetas aquí"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетягніть сюди файли або папки"
+          }
+        }
+      }
+    },
     "Edit": {
       "localizations": {
         "de": {
@@ -2529,6 +2585,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Неправильний пароль"
+          }
+        }
+      }
+    },
+    "Index file": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indexdatei"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichier d’index"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo de índice"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Індексний файл"
           }
         }
       }
@@ -3856,6 +3940,34 @@
         }
       }
     },
+    "Or click Add in the toolbar to choose them.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oder in der Symbolleiste auf „Hinzufügen“ klicken."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ou cliquez sur Ajouter dans la barre d’outils."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O haz clic en Añadir en la barra de herramientas."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Або натисніть «Додати» на панелі інструментів."
+          }
+        }
+      }
+    },
     "Output": {
       "localizations": {
         "de": {
@@ -3967,6 +4079,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файли відновлення PAR1"
+          }
+        }
+      }
+    },
+    "PAR1 sets can't contain subfolders; their files were skipped.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PAR1-Sets können keine Unterordner enthalten; deren Dateien wurden übersprungen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les jeux PAR1 ne peuvent pas contenir de sous-dossiers ; leurs fichiers ont été ignorés."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los conjuntos PAR1 no pueden contener subcarpetas; sus archivos se han omitido."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набори PAR1 не можуть містити підпапки; їхні файли пропущено."
           }
         }
       }
@@ -4366,6 +4506,34 @@
         }
       }
     },
+    "Recovery blocks: %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellungsblöcke: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocs de récupération : %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloques de recuperación: %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Блоки відновлення: %lld"
+          }
+        }
+      }
+    },
     "Recovery data:": {
       "localizations": {
         "de": {
@@ -4418,6 +4586,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файли відновлення"
+          }
+        }
+      }
+    },
+    "Recovery volume %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellungsdatei %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume de récupération %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumen de recuperación %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Том відновлення %lld"
           }
         }
       }
@@ -4950,6 +5146,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Показати параметри"
+          }
+        }
+      }
+    },
+    "Size": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Größe"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamaño"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розмір"
           }
         }
       }

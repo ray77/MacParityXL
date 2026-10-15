@@ -42,6 +42,10 @@ class ParSetDocument: NSDocument {
         window.toolbar = toolbar.makeToolbar()
         // Title on its own row, so the localized labels all fit without an overflow menu.
         window.toolbarStyle = .expanded
+        // Set the title and toolbar area off from the file list: a little darker in light
+        // mode, a little lighter in dark mode. The content view keeps its own background.
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = .parHeaderBackground
         // Assigning the content view controller resizes the window, so restore the size afterwards.
         window.setContentSize(NSSize(width: 760, height: 500))
         if !window.setFrameUsingName("ParSetWindow") {
@@ -130,7 +134,7 @@ class ParSetDocument: NSDocument {
     @IBAction func addFiles(_ sender: Any?) {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = true
         guard let window = windowControllers.first?.window else { return }
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK else { return }
@@ -202,5 +206,14 @@ final class UnrarDocument: NSDocument {
             await UnrarJob(archive: fileURL).run()
             close()
         }
+    }
+}
+
+extension NSColor {
+    /// Background of the window's title and toolbar area.
+    static let parHeaderBackground = NSColor(name: "ParHeaderBackground") { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor(calibratedWhite: 0.235, alpha: 1)
+            : NSColor(calibratedWhite: 0.885, alpha: 1)
     }
 }

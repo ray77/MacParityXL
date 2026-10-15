@@ -10,8 +10,7 @@ struct SettingsView: View {
             UnrarSettings().tabItem { Label("Unrar", systemImage: "archivebox") }
             RulesSettings().tabItem { Label("Post-processing", systemImage: "list.bullet.rectangle") }
         }
-        .frame(width: 700)
-        .padding()
+        .frame(width: 600)
     }
 }
 
@@ -23,38 +22,43 @@ private struct GeneralSettings: View {
 
     var body: some View {
         Form {
-            Picker("Language", selection: $language) {
-                ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
-            }
-            .onChange(of: language) { AppLanguage.set(language) }
-            if language != launchedLanguage {
-                HStack {
-                    Text("The new language is used after restarting MacParityXL.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Restart Now") { AppLanguage.relaunch() }
-                        .controlSize(.small)
+            Section {
+                Picker("Language", selection: $language) {
+                    ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
+                }
+                .onChange(of: language) { AppLanguage.set(language) }
+                if language != launchedLanguage {
+                    HStack {
+                        Text("The new language is used after restarting MacParityXL.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Restart Now") { AppLanguage.relaunch() }
+                    }
                 }
             }
-            Toggle("Move PAR files to Trash after a successful check", isOn: $settings.autoDeleteParFiles)
-            Toggle("Close the window after automatic post-processing", isOn: $settings.closeWindowAfterPostProcessing)
-            Picker("New document type", selection: $settings.defaultFormat) {
-                Text("PAR2").tag(ParFormat.par2)
-                Text("PAR1").tag(ParFormat.par1)
+            Section {
+                Picker("New document type", selection: $settings.defaultFormat) {
+                    Text("PAR2").tag(ParFormat.par2)
+                    Text("PAR1").tag(ParFormat.par1)
+                }
+                Picker("When opening several files", selection: $settings.processSimultaneously) {
+                    Text("Process them one by one").tag(false)
+                    Text("Process them simultaneously").tag(true)
+                }
             }
-            Picker("When opening several files", selection: $settings.processSimultaneously) {
-                Text("Process them one by one").tag(false)
-                Text("Process them simultaneously").tag(true)
+            Section {
+                Toggle("Move PAR files to Trash after a successful check", isOn: $settings.autoDeleteParFiles)
+                Toggle("Close the window after automatic post-processing", isOn: $settings.closeWindowAfterPostProcessing)
             }
-            Toggle("Run unattended", isOn: $settings.runUnattended)
-            Text("Unattended runs show no dialogs. Existing items are kept, passwords are skipped, and errors are reported as notifications.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                // Without a width limit the form sizes its column to the unwrapped text and clips the labels.
-                .frame(maxWidth: 440, alignment: .leading)
+            Section {
+                Toggle(isOn: $settings.runUnattended) {
+                    Text("Run unattended")
+                    Text("Unattended runs show no dialogs. Existing items are kept, passwords are skipped, and errors are reported as notifications.")
+                }
+            }
         }
+        .formStyle(.grouped)
     }
 }
 
@@ -125,6 +129,7 @@ private struct CreationSettings: View {
                 }
             }
         }
+        .formStyle(.grouped)
     }
 }
 
@@ -155,6 +160,7 @@ private struct UnrarSettings: View {
             }
             Toggle("Keep incorrectly extracted (broken) files", isOn: $settings.keepBrokenFiles)
         }
+        .formStyle(.grouped)
     }
 
     private func chooseFixedFolder() {
@@ -188,7 +194,7 @@ private struct RulesSettings: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 12) {
             Toggle("Automatically post-process files after repair", isOn: $settings.autoPostProcess)
             HStack(alignment: .top) {
                 List(selection: $selection) {
@@ -201,17 +207,26 @@ private struct RulesSettings: View {
                     }
                 }
                 .frame(minHeight: 180)
-                VStack {
-                    Button("New Rule…") { editing = .new }
-                    Button("Modify…") { selectedRule.map { editing = .existing($0) } }
+                VStack(spacing: 8) {
+                    Button { editing = .new } label: { Text("New Rule…").frame(maxWidth: .infinity) }
+                    Button { selectedRule.map { editing = .existing($0) } } label: { Text("Modify…").frame(maxWidth: .infinity) }
                         .disabled(selectedRule.map(\.isBuiltIn) ?? true)
-                    Button("↑") { move(by: -1) }.disabled(!canMove(by: -1))
-                    Button("↓") { move(by: 1) }.disabled(!canMove(by: 1))
-                    Button("Delete") { delete() }.disabled(selectedRule.map(\.isBuiltIn) ?? true)
-                    Button("Standard") { settings.restoreStandardRules() }
+                    HStack(spacing: 8) {
+                        Button { move(by: -1) } label: { Image(systemName: "chevron.up").frame(maxWidth: .infinity) }
+                            .disabled(!canMove(by: -1))
+                        Button { move(by: 1) } label: { Image(systemName: "chevron.down").frame(maxWidth: .infinity) }
+                            .disabled(!canMove(by: 1))
+                    }
+                    Button { delete() } label: { Text("Delete").frame(maxWidth: .infinity) }
+                        .disabled(selectedRule.map(\.isBuiltIn) ?? true)
+                    Spacer().frame(height: 4)
+                    Button { settings.restoreStandardRules() } label: { Text("Standard").frame(maxWidth: .infinity) }
                 }
+                .buttonStyle(.bordered)
+                .frame(width: 140)
             }
         }
+        .padding(20)
         .sheet(item: $editing) { target in
             switch target {
             case .new:
