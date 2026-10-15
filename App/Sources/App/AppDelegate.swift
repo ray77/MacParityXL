@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let delegate = AppDelegate()
         app.delegate = delegate
         app.mainMenu = MainMenu.make()
+        AppAppearance.current.apply()
         app.run()
     }
 

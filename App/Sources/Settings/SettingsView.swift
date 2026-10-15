@@ -19,10 +19,15 @@ private struct GeneralSettings: View {
     @State private var language = AppLanguage.current
     /// The language the running app was launched with, to tell whether a restart is pending.
     @State private var launchedLanguage = AppLanguage.current
+    @State private var appearance = AppAppearance.current
 
     var body: some View {
         Form {
             Section {
+                Picker("Appearance", selection: $appearance) {
+                    ForEach(AppAppearance.allCases) { Text($0.title).tag($0) }
+                }
+                .onChange(of: appearance) { AppAppearance.set(appearance) }
                 Picker("Language", selection: $language) {
                     ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
                 }

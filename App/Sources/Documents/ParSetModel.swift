@@ -123,7 +123,9 @@ final class ParSetModel {
     /// Folder of the files in an untitled set.
     private(set) var sourceFolder: URL?
 
-    var goodFileCount: Int { files.filter { !$0.state.needsAttention && $0.state != .notInParSet }.count }
+    var goodFileCount: Int {
+        files.filter { !$0.state.needsAttention && ![.notInParSet, .pending, .checking].contains($0.state) }.count
+    }
     var problemFileCount: Int { files.filter(\.state.needsAttention).count }
     var missingFileCount: Int { files.filter { $0.state.isMissing }.count }
     var damagedFileCount: Int { problemFileCount - missingFileCount }

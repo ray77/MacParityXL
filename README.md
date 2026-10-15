@@ -11,8 +11,22 @@ extract RAR archives, and run post-processing rules. See [SPEC.md](SPEC.md) for 
   after a successful repair
 - **Post-processing rules**: open, open with an app, or run a Terminal command after a check
 - Universal app (Apple silicon and Intel), macOS 14 or later
+- Block chart: how many data blocks are intact, repaired or missing, and how much recovery data
+  is available or still lacking
+- Light and dark mode (follows the system, or pick one in Settings)
 - English, German, French, Spanish and Ukrainian; follows the system language, or pick one in
   Settings › General
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/light-repaired.png" alt="A repaired PAR2 set in light mode" width="49%">
+  <img src="docs/screenshots/light-cannot-repair.png" alt="A set that needs more recovery blocks, in light mode" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/dark-repairing.png" alt="Repair in progress in dark mode" width="49%">
+  <img src="docs/screenshots/dark-settings.png" alt="Settings in dark mode" width="49%">
+</p>
 
 ## Install
 

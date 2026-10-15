@@ -70,7 +70,7 @@ struct ParSetView: View {
                 switch row {
                 case .data(let file):
                     HStack(spacing: 6) {
-                        StatusBadge(state: file.state)
+                        StatusBadge(state: file.state, isRunning: model.isRunning)
                         if !file.contributesToParity {
                             Badge(text: String(localized: "No recovery data"), symbol: "minus.circle", tint: .secondary)
                                 .help("This file is checked, but it did not contribute to the recovery files, so it can't be restored.")
@@ -132,7 +132,11 @@ private struct StatusBar: View {
                         figures
                     }
                 }
-                Spacer(minLength: 0)
+                Spacer(minLength: 12)
+                if let balance = BlockBalance(model: model) {
+                    BlockBalanceView(balance: balance)
+                        .transition(.opacity)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -303,15 +307,16 @@ private struct Badge: View {
 
 private struct StatusBadge: View {
     let state: TargetFileState
+    var isRunning = false
 
     var body: some View {
         switch state {
-        case .pending:
+        case .pending where !isRunning:
             EmptyView()
-        case .checking:
+        case .pending, .checking:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.mini)
-                Text(state.description).font(.system(size: 11.5)).foregroundStyle(.secondary)
+                Text(TargetFileState.checking.description).font(.system(size: 11.5)).foregroundStyle(.secondary)
             }
         case .ok:
             Badge(text: state.description, symbol: "checkmark", tint: .green)
