@@ -7,31 +7,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "MacParity runs post-processing commands in Terminal."
+            "value": "MacParityXL runs post-processing commands in Terminal."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "MacParity führt Nachbearbeitungsbefehle im Terminal aus."
+            "value": "MacParityXL führt Nachbearbeitungsbefehle im Terminal aus."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "MacParity exécute les commandes de post-traitement dans le Terminal."
+            "value": "MacParityXL exécute les commandes de post-traitement dans le Terminal."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "MacParity ejecuta los comandos de posprocesado en Terminal."
+            "value": "MacParityXL ejecuta los comandos de posprocesado en Terminal."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "MacParity виконує команди подальшої обробки в Терміналі."
+            "value": "MacParityXL виконує команди подальшої обробки в Терміналі."
           }
         }
       }

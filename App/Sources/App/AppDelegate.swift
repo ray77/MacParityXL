@@ -6,6 +6,7 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
+    private var aboutWindow: NSWindow?
 
     static func main() {
         let app = NSApplication.shared
@@ -31,6 +32,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Actions
+
+    @IBAction func showAbout(_ sender: Any?) {
+        if aboutWindow == nil {
+            let hosting = NSHostingController(rootView: AboutView())
+            hosting.sizingOptions = .preferredContentSize
+            let window = NSWindow(contentViewController: hosting)
+            window.styleMask = [.titled, .closable, .fullSizeContentView]
+            window.titlebarAppearsTransparent = true
+            window.title = String(localized: "About \(ProcessInfo.processInfo.processName)")
+            window.titleVisibility = .hidden
+            window.isMovableByWindowBackground = true
+            window.isReleasedWhenClosed = false
+            aboutWindow = window
+        }
+        aboutWindow?.center()
+        aboutWindow?.makeKeyAndOrderFront(nil)
+    }
 
     @IBAction func showSettings(_ sender: Any?) {
         if settingsWindow == nil {

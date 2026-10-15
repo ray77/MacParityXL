@@ -1,5 +1,5 @@
 #!/bin/bash
-# Downloads, verifies and builds the third-party engines MacParity depends on.
+# Downloads, verifies and builds the third-party engines MacParityXL depends on.
 #
 #   Vendor/build/bin/par2            universal par2cmdline-turbo executable (GPL-2.0, run as subprocess)
 #   Vendor/build/lib/libunrar.a      universal RARLAB UnRAR static library (UnRAR license)

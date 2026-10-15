@@ -29,7 +29,7 @@ private struct GeneralSettings: View {
             .onChange(of: language) { AppLanguage.set(language) }
             if language != launchedLanguage {
                 HStack {
-                    Text("The new language is used after restarting MacParity.")
+                    Text("The new language is used after restarting MacParityXL.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -91,8 +91,15 @@ private struct CreationSettings: View {
     var body: some View {
         Form {
             Section("PAR2") {
-                Stepper("Redundancy: \(settings.par2Options.redundancyPercent) %",
-                        value: $settings.par2Options.redundancyPercent, in: 1...100)
+                LabeledContent("Redundancy") {
+                    HStack(spacing: 4) {
+                        TextField("", value: $settings.par2Options.redundancyPercent, format: .number)
+                            .frame(width: 50)
+                        Stepper("", value: $settings.par2Options.redundancyPercent, in: 1...100)
+                            .labelsHidden()
+                        Text("%")
+                    }
+                }
                 Toggle("Limit recovery file size to the largest data file", isOn: $settings.par2Options.limitRecoveryFileSize)
                 LabeledContent("Block size") {
                     HStack {
@@ -108,7 +115,14 @@ private struct CreationSettings: View {
                 }
                 .pickerStyle(.radioGroup)
                 .labelsHidden()
-                Stepper("Number: \(par1Number)", value: par1NumberBinding, in: isFixedCount.wrappedValue ? 0...99 : 1...99)
+                LabeledContent("Number") {
+                    HStack(spacing: 4) {
+                        TextField("", value: par1NumberBinding, format: .number)
+                            .frame(width: 50)
+                        Stepper("", value: par1NumberBinding, in: isFixedCount.wrappedValue ? 0...99 : 1...99)
+                            .labelsHidden()
+                    }
+                }
             }
         }
     }

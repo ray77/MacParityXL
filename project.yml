@@ -1,4 +1,4 @@
-name: MacParity
+name: MacParityXL
 
 options:
   bundleIdPrefix: org.noisebay
@@ -10,7 +10,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "1.0.0"
     SWIFT_EMIT_LOC_STRINGS: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     CURRENT_PROJECT_VERSION: "1"
@@ -24,7 +24,7 @@ packages:
     path: Packages/ParityKit
 
 targets:
-  MacParity:
+  MacParityXL:
     type: application
     platform: macOS
     sources:
@@ -45,8 +45,8 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleName: MacParity
-        CFBundleDisplayName: MacParity
+        CFBundleName: MacParityXL
+        CFBundleDisplayName: MacParityXL
         CFBundleDevelopmentRegion: en
         CFBundleLocalizations: [en, de, fr, es, uk]
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -54,8 +54,8 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSPrincipalClass: NSApplication
-        NSHumanReadableCopyright: "MacParity – PAR/PAR2 and RAR utility"
-        NSAppleEventsUsageDescription: MacParity runs post-processing commands in Terminal.
+        NSHumanReadableCopyright: "MacParityXL – PAR/PAR2 and RAR utility"
+        NSAppleEventsUsageDescription: MacParityXL runs post-processing commands in Terminal.
         CFBundleDocumentTypes:
           - CFBundleTypeName: PAR2 Set
             CFBundleTypeRole: Editor
@@ -91,12 +91,13 @@ targets:
               public.mime-type: [application/x-rar-compressed, application/vnd.rar]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: org.noisebay.MacParity
+        PRODUCT_BUNDLE_IDENTIFIER: org.noisebay.MacParityXL
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        PRODUCT_NAME: MacParity
+        PRODUCT_NAME: MacParityXL
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         ENABLE_APP_SANDBOX: NO
+        CODE_SIGN_ENTITLEMENTS: App/MacParityXL.entitlements
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_INCLUDE_PATHS: $(SRCROOT)/App/CUnrar
         HEADER_SEARCH_PATHS: $(SRCROOT)/Vendor/build/include/unrar
@@ -111,25 +112,25 @@ targets:
             exit 1
           fi
 
-  MacParityTests:
+  MacParityXLTests:
     type: bundle.unit-test
     platform: macOS
     sources: [App/Tests]
     dependencies:
-      - target: MacParity
+      - target: MacParityXL
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/MacParity.app/Contents/MacOS/MacParity
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/MacParityXL.app/Contents/MacOS/MacParityXL
         BUNDLE_LOADER: $(TEST_HOST)
 
 schemes:
-  MacParity:
+  MacParityXL:
     build:
       targets:
-        MacParity: all
-        MacParityTests: [test]
+        MacParityXL: all
+        MacParityXLTests: [test]
     test:
       targets:
-        - MacParityTests
+        - MacParityXLTests
         - package: ParityKit/ParityKitTests

@@ -18,6 +18,8 @@ struct ParProgressBar: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(phase)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
                     .font(.callout.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()

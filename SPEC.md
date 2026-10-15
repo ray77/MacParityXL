@@ -1,4 +1,4 @@
-# MacParity – Feature-Spec (Nachbau von MacPAR deLuxe 5.1.1)
+# MacParityXL – Feature-Spec (Nachbau von MacPAR deLuxe 5.1.1)
 
 Quelle: Analyse von `/Volumes/MacPAR deLuxe/MacPAR deLuxe.app` (Bundle, Info.plist, Help-HTML,
 Localizable.strings, dekodierte NIBs, Obj-C-Klassen/Methoden-Symbole). Ziel ist ein eigener,

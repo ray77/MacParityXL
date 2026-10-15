@@ -61,7 +61,9 @@ struct ParSetView: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
             if model.isRunning {
-                ParProgressBar(percent: model.progress?.percent, phase: progressPhase)
+                // While fading out after the run, show a full bar instead of a stale phase.
+                ParProgressBar(percent: model.isRunning ? model.progress?.percent : 100,
+                               phase: model.isRunning ? progressPhase : "")
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
             statistics

@@ -57,10 +57,31 @@ final class ParSetToolbar: NSObject, NSToolbarDelegate {
         item.label = spec.label
         item.paletteLabel = spec.label
         item.toolTip = spec.tip
-        item.image = NSImage(systemSymbolName: spec.symbol, accessibilityDescription: spec.label)
+        item.image = Self.squareSymbol(spec.symbol, label: spec.label)
         item.action = spec.action
         item.isBordered = true
         return item
+    }
+
+    /// The toolbar's glass bezel follows the image's shape; tall symbols such as
+    /// `doc.badge.plus` made it egg-shaped. Centering every symbol in the same square
+    /// canvas keeps all bezels round and the symbols optically the same size.
+    private static func squareSymbol(_ name: String, label: String) -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: label)?
+            .withSymbolConfiguration(configuration) else { return nil }
+        let side: CGFloat = 22
+        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
+            let size = symbol.size
+            let scale = min(1, side / max(size.width, size.height))
+            let drawn = NSSize(width: size.width * scale, height: size.height * scale)
+            symbol.draw(in: NSRect(x: rect.midX - drawn.width / 2, y: rect.midY - drawn.height / 2,
+                                   width: drawn.width, height: drawn.height))
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = label
+        return image
     }
 }
 

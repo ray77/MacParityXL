@@ -43,7 +43,7 @@ public struct Par1Header: Equatable, Sendable {
     static let fixedHeaderSize = 0x60
     static let entryFixedSize = 0x38
     static let version: UInt32 = 0x0001_0000
-    /// Identifies MacParity as the creating client ("MP" 1.0).
+    /// Identifies MacParityXL as the creating client ("MP" 1.0).
     static let clientID: UInt32 = 0x4D50_0100
 
     public enum ReadError: Error, Equatable {

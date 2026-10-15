@@ -66,7 +66,9 @@ enum ParSetStatus: Equatable {
 @Observable
 final class ParSetModel {
     let format: ParFormat
-    private(set) var parFile: URL?
+    private(set) var parFile: URL? {
+        didSet { if parFile != oldValue, let parFile { onParFileChanged?(parFile) } }
+    }
     private(set) var files: [TargetFile] = []
     private(set) var statistics = Par2Statistics()
     private(set) var status: ParSetStatus = .idle {
@@ -84,6 +86,8 @@ final class ParSetModel {
 
     /// Called after a successful run so the document can close itself if configured.
     var onFinishedPostProcessing: (() -> Void)?
+    /// Called when a new set has been created, so the window can take its name.
+    var onParFileChanged: ((URL) -> Void)?
     /// Asked before scanning a folder full of unrelated files; return false to cancel.
     var confirmManyUnrelatedFiles: ((_ folderName: String, _ count: Int) -> Bool)?
 
@@ -406,8 +410,11 @@ final class ParSetModel {
 
         switch rule.action {
         case .builtInUnrar:
-            let first = names.first(where: RarVolumes.isFirstVolume).map { folder.appending(path: $0) } ?? file
-            await UnrarJob(archive: first).run()
+            // A set can hold several archives; extract each one, starting at its first volume.
+            let archives = names.filter { RarVolumes.isFirstVolume($0) && ($0.lowercased().hasSuffix(".rar") || $0 == fileName) }
+            for name in archives.isEmpty ? [fileName] : archives {
+                await UnrarJob(archive: folder.appending(path: name)).run()
+            }
         case .openInFinder:
             NSWorkspace.shared.open(file)
         case .openWithApplication(let bundleURL):
@@ -488,7 +495,9 @@ final class ParSetModel {
     /// File name suggestion: the common base name of all files, if they share one.
     var suggestedParFileName: String {
         let bases = Set(files.map { ($0.name as NSString).deletingPathExtension })
-        return (bases.count == 1 ? bases.first! : String(localized: "Untitled")) + (format == .par1 ? ".par" : ".par2")
+        // Several unrelated files: name the set after their folder, like most posters do.
+        let base = bases.count == 1 ? bases.first! : sourceFolder?.lastPathComponent ?? String(localized: "Untitled")
+        return base + (format == .par1 ? ".par" : ".par2")
     }
 
     func create(parFile: URL, options: Par2CreateOptions) async {

@@ -22,7 +22,7 @@ enum MainMenu {
     private static func appMenu() -> NSMenu {
         let name = ProcessInfo.processInfo.processName
         let menu = NSMenu(title: name)
-        menu.add(String(localized: "About \(name)"), #selector(NSApplication.orderFrontStandardAboutPanel(_:)))
+        menu.add(String(localized: "About \(name)"), #selector(AppDelegate.showAbout(_:)))
         menu.addItem(.separator())
         menu.add(String(localized: "Settings…"), #selector(AppDelegate.showSettings(_:)), ",")
         menu.addItem(.separator())
@@ -43,9 +43,8 @@ enum MainMenu {
         menu.add(String(localized: "New PAR2 Set"), #selector(AppDelegate.newPar2Set(_:)), "n")
         menu.add(String(localized: "New PAR1 Set"), #selector(AppDelegate.newPar1Set(_:)), "n", [.command, .option])
         menu.add(String(localized: "Open and Repair…"), #selector(NSDocumentController.openDocument(_:)), "o")
-        let recent = NSMenu(title: String(localized: "Open Recent"))
-        recent.add(String(localized: "Clear Menu"), #selector(NSDocumentController.clearRecentDocuments(_:)))
-        menu.addItem(withTitle: recent.title, action: nil, keyEquivalent: "").submenu = recent
+        // AppKit inserts its own "Open Recent" submenu after the openDocument: item;
+        // building one here gave two of them.
         menu.addItem(.separator())
         menu.add(String(localized: "Close"), #selector(NSWindow.performClose(_:)), "w")
         menu.add(String(localized: "Close All"), #selector(AppDelegate.closeAll(_:)), "w", [.command, .option])

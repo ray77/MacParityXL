@@ -40,7 +40,8 @@ class ParSetDocument: NSDocument {
         hosting.sizingOptions = [.minSize, .preferredContentSize]
         window.contentViewController = hosting
         window.toolbar = toolbar.makeToolbar()
-        window.toolbarStyle = .unified
+        // Title on its own row, so the localized labels all fit without an overflow menu.
+        window.toolbarStyle = .expanded
         // Assigning the content view controller resizes the window, so restore the size afterwards.
         window.setContentSize(NSSize(width: 760, height: 500))
         if !window.setFrameUsingName("ParSetWindow") {
@@ -52,6 +53,14 @@ class ParSetDocument: NSDocument {
         let controller = NSWindowController(window: window)
         addWindowController(controller)
         model.onFinishedPostProcessing = { [weak self] in self?.close() }
+        model.onParFileChanged = { [weak self] url in
+            // A freshly created set becomes a regular document named after its par file.
+            guard let self, fileURL == nil else { return }
+            fileURL = url
+            didStart = true
+            windowControllers.forEach { $0.synchronizeWindowTitleWithDocumentName() }
+            NSDocumentController.shared.noteNewRecentDocumentURL(url)
+        }
         model.confirmManyUnrelatedFiles = { folderName, count in
             let alert = NSAlert()
             alert.messageText = String(localized: "The folder “\(folderName)” contains \(count) other files.")

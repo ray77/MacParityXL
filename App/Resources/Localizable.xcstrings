@@ -1,8 +1,39 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%": {
+      "shouldTranslate": false
+    },
     "%@ %@": {
       "shouldTranslate": false
+    },
+    "%@ of %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ von %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sur %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ de %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ з %@"
+          }
+        }
+      }
     },
     "%lld %%": {
       "shouldTranslate": false
@@ -1070,34 +1101,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вибрати…"
-          }
-        }
-      }
-    },
-    "Clear Menu": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einträge löschen"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Effacer le menu"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Borrar menú"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Очистити меню"
           }
         }
       }
@@ -2474,6 +2477,34 @@
         }
       }
     },
+    "Includes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enthält"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inclut"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluye"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Містить"
+          }
+        }
+      }
+    },
     "Incorrect password": {
       "localizations": {
         "de": {
@@ -2750,6 +2781,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Залишити сегменти"
+          }
+        }
+      }
+    },
+    "License": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lizenz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licence"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licencia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ліцензія"
           }
         }
       }
@@ -3405,6 +3464,34 @@
         }
       }
     },
+    "Number": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anzahl"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Número"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кількість"
+          }
+        }
+      }
+    },
     "Number of recovery files (.pNN):": {
       "localizations": {
         "de": {
@@ -3429,34 +3516,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кількість файлів відновлення (.pNN):"
-          }
-        }
-      }
-    },
-    "Number: %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Anzahl: %lld"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nombre : %lld"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Número: %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кількість: %lld"
           }
         }
       }
@@ -3713,34 +3772,6 @@
         }
       }
     },
-    "Open Recent": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Benutzte Dokumente öffnen"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir l’élément récent"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir recientes"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Відкрити недавні"
-          }
-        }
-      }
-    },
     "Open with %@": {
       "localizations": {
         "de": {
@@ -3942,6 +3973,34 @@
     },
     "PAR2": {
       "shouldTranslate": false
+    },
+    "PAR2 engine, GPL-2.0": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PAR2-Engine, GPL-2.0"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moteur PAR2, GPL-2.0"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motor PAR2, GPL-2.0"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рушій PAR2, GPL-2.0"
+          }
+        }
+      }
     },
     "par2 failed (%@).": {
       "localizations": {
@@ -4251,6 +4310,34 @@
         }
       }
     },
+    "RAR extraction, © Alexander Roshal": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAR-Entpacker, © Alexander Roshal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Décompression RAR, © Alexander Roshal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descompresión RAR, © Alexander Roshal"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розпакування RAR, © Alexander Roshal"
+          }
+        }
+      }
+    },
     "Recovered successfully": {
       "localizations": {
         "de": {
@@ -4335,30 +4422,30 @@
         }
       }
     },
-    "Redundancy: %lld %%": {
+    "Redundancy": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Redundanz: %lld %%"
+            "value": "Redundanz"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Redondance : %lld %%"
+            "value": "Redondance"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Redundancia: %lld %%"
+            "value": "Redundancia"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Надлишковість: %lld %%"
+            "value": "Надлишковість"
           }
         }
       }
@@ -4979,30 +5066,30 @@
         }
       }
     },
-    "The new language is used after restarting MacParity.": {
+    "The new language is used after restarting MacParityXL.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die neue Sprache wird nach einem Neustart von MacParity verwendet."
+            "value": "Die neue Sprache wird nach einem Neustart von MacParityXL verwendet."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "La nouvelle langue sera utilisée après le redémarrage de MacParity."
+            "value": "La nouvelle langue sera utilisée après le redémarrage de MacParityXL."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El nuevo idioma se usará tras reiniciar MacParity."
+            "value": "El nuevo idioma se usará tras reiniciar MacParityXL."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нова мова застосується після перезапуску MacParity."
+            "value": "Нова мова застосується після перезапуску MacParityXL."
           }
         }
       }
@@ -5486,6 +5573,34 @@
     "unzip «F» -d «D»": {
       "shouldTranslate": false
     },
+    "Verify, repair and create PAR2 and PAR1 sets, and extract RAR archives.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PAR2- und PAR1-Sets prüfen, reparieren und erstellen sowie RAR-Archive entpacken."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez, réparez et créez des jeux PAR2 et PAR1, et décompressez des archives RAR."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica, repara y crea conjuntos PAR2 y PAR1, y descomprime archivos RAR."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка, відновлення й створення наборів PAR2 і PAR1 та розпакування архівів RAR."
+          }
+        }
+      }
+    },
     "Verifying": {
       "localizations": {
         "de": {
@@ -5538,6 +5653,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірка файлів. Натисніть ⌘. для скасування."
+          }
+        }
+      }
+    },
+    "Version %@ (%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (%@)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (%@)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión %@ (%@)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія %@ (%@)"
           }
         }
       }

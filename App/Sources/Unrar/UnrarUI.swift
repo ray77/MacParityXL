@@ -22,7 +22,13 @@ enum PasswordPrompt {
 private final class UnrarProgress {
     var archiveName: String
     var currentFile = ""
-    var fraction = 0.0
+    var done: Int64 = 0
+    var total: Int64 = 0
+
+    /// Nil until the library reports the archive's size.
+    var percent: Double? {
+        total > 0 ? min(100, Double(done) / Double(total) * 100) : nil
+    }
 
     init(archiveName: String) {
         self.archiveName = archiveName
@@ -34,21 +40,32 @@ private struct UnrarProgressView: View {
     let onCancel: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Extracting “\(progress.archiveName)”").font(.headline)
-            ProgressView(value: progress.fraction)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 48, height: 48)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Extracting “\(progress.archiveName)”")
+                        .font(.headline)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    if progress.total > 0 {
+                        Text("\(progress.done.formatted(.byteCount(style: .file))) of \(progress.total.formatted(.byteCount(style: .file)))")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            ParProgressBar(percent: progress.percent, phase: progress.currentFile)
             HStack {
-                Text(progress.currentFile)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(.secondary)
                 Spacer()
                 Button("Cancel", action: onCancel)
                     .keyboardShortcut(.cancelAction)
             }
         }
-        .padding()
-        .frame(width: 420)
+        .padding(20)
+        .frame(width: 460)
     }
 }
 
@@ -76,7 +93,8 @@ final class UnrarProgressWindowController: NSWindowController {
     required init?(coder: NSCoder) { fatalError() }
 
     func update(done: Int64, total: Int64, currentFile: String) {
-        progress.fraction = total > 0 ? min(1, Double(done) / Double(total)) : 0
+        progress.done = done
+        progress.total = total
         progress.currentFile = currentFile
     }
 }

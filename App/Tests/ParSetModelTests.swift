@@ -1,6 +1,6 @@
 import ParityKit
 import XCTest
-@testable import MacParity
+@testable import MacParityXL
 
 @MainActor
 final class ParSetModelTests: XCTestCase {
