@@ -1,0 +1,5 @@
+module CUnrar [system] {
+    header "CUnrar.h"
+    link "unrar"
+    export *
+}

@@ -1,0 +1,6 @@
+Loading "bogus.par2".
+Loading: 37.0%No new packets found
+Loading "bogus.par2".
+Loading: 37.0%No new packets found
+
+Main packet not found.
