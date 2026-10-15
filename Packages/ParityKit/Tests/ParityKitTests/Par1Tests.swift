@@ -78,6 +78,51 @@ struct Par1Tests {
         #expect(FileManager.default.fileExists(atPath: folder.appending(path: "beta file.bin.bad").path))
     }
 
+    /// A crafted set naming "../ha.bin" must not make a repair write outside its folder.
+    @Test func repairStaysInsideFolder() throws {
+        let parent = try fixtureCopy()
+        let folder = parent.appending(path: "inner")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        for name in try FileManager.default.contentsOfDirectory(atPath: parent.path) where name != "inner" {
+            try FileManager.default.moveItem(at: parent.appending(path: name), to: folder.appending(path: name))
+        }
+        let alpha = try contents(folder, "alpha.bin")
+        // Same UTF-16 length, so only the names change; then refresh the control hashes.
+        let from = Data("alpha.bin".utf16.flatMap { [UInt8($0 & 0xFF), UInt8($0 >> 8)] })
+        let to = Data("../ha.bin".utf16.flatMap { [UInt8($0 & 0xFF), UInt8($0 >> 8)] })
+        for name in ["set.par", "set.p01", "set.p02", "set.p03"] {
+            let url = folder.appending(path: name)
+            var data = try Data(contentsOf: url)
+            let range = try #require(data.range(of: from))
+            data.replaceSubrange(range, with: to)
+            try data.write(to: url)
+            try Par1Header.writeControlHash(to: url)
+        }
+        try FileManager.default.removeItem(at: folder.appending(path: "alpha.bin"))
+
+        let engine = Par1Engine()
+        let scan = try engine.scan(parFile: folder.appending(path: "set.par"))
+        #expect(scan.files[0].name == "ha.bin")
+        _ = try engine.repair(scan)
+        #expect(try contents(folder, "ha.bin") == alpha)
+        #expect(!FileManager.default.fileExists(atPath: parent.appending(path: "ha.bin").path))
+    }
+
+    @Test func rejectsUnusableNames() throws {
+        #expect(try Par1Header.safeFileName("a/b\\c.bin") == "c.bin")
+        #expect(throws: Par1Header.ReadError.unsafeFileName) { try Par1Header.safeFileName("..") }
+        #expect(throws: Par1Header.ReadError.unsafeFileName) { try Par1Header.safeFileName("/") }
+    }
+
+    @Test func rejectsHugeHeaderFields() throws {
+        let folder = try fixtureCopy()
+        let url = folder.appending(path: "set.par")
+        var data = try Data(contentsOf: url)
+        data.replaceSubrange(0x48..<0x50, with: Data(repeating: 0xFF, count: 8))
+        try data.write(to: url)
+        #expect(throws: Par1Header.ReadError.truncated) { try Par1Header.read(from: url, verifyControlHash: false) }
+    }
+
     @Test func reportsMissingVolumes() throws {
         let folder = try fixtureCopy()
         for name in ["alpha.bin", "beta file.bin", "set.p01", "set.p02"] {

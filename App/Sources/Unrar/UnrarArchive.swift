@@ -95,7 +95,15 @@ final class UnrarArchive: @unchecked Sendable {
 
     /// The top-level items the archive will produce.
     func topLevelItems() throws -> Set<String> {
-        Set(try entries().compactMap { $0.path.split(separator: "/").first.map(String.init) })
+        Set(try entries().compactMap { Self.topLevelItem(of: $0.path) })
+    }
+
+    /// UnRAR drops "." / ".." components and leading slashes when extracting; do the same,
+    /// so a crafted name can never point at the destination's parent.
+    static func topLevelItem(of path: String) -> String? {
+        path.split(whereSeparator: { $0 == "/" || $0 == "\\" })
+            .first { $0 != "." && $0 != ".." }
+            .map(String.init)
     }
 
     /// Extracts everything into `destination`, which must exist.

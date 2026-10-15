@@ -40,16 +40,25 @@ public enum Par2FileReader {
                 continue
             }
             let type = data[(start + 48)..<(start + 64)]
-            if type.elementsEqual(fileDescType) {
+            // A FileDesc body needs at least its fixed 56 bytes.
+            if type.elementsEqual(fileDescType), length >= headerSize + 56 {
                 let body = start + headerSize
                 let fileLength = readUInt64(data, at: body + 48)
                 let nameBytes = data[(body + 56)..<(start + length)].prefix { $0 != 0 }
-                let name = String(decoding: nameBytes, as: UTF8.self)
+                let name = displayName(String(decoding: nameBytes, as: UTF8.self))
                 result[name] = FileDescription(name: name, length: fileLength)
             }
             offset = start + length
         }
         return result.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// The name as par2cmdline uses it on disk: no leading slash, ".." components escaped,
+    /// so a crafted set cannot point outside its folder.
+    static func displayName(_ name: String) -> String {
+        name.split(separator: "/", omittingEmptySubsequences: true)
+            .map { $0 == ".." ? "%2E%2E" : String($0) }
+            .joined(separator: "/")
     }
 
     private static func readUInt64(_ data: Data, at index: Data.Index) -> UInt64 {

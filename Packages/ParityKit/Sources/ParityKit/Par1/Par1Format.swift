@@ -50,6 +50,8 @@ public struct Par1Header: Equatable, Sendable {
         case notAParFile
         case truncated
         case controlHashMismatch
+        /// A listed name that cannot be a plain file name ("", ".", "..").
+        case unsafeFileName
     }
 
     /// Reads the header of a PAR1 file and, if `verifyControlHash`, checks the whole file.
@@ -64,10 +66,13 @@ public struct Par1Header: Equatable, Sendable {
 
         let storedControlHash = fixed[0x10..<0x20]
         let setHash = Data(fixed[0x20..<0x30])
-        let volume = Int(fixed.uint64(at: 0x30))
-        let fileCount = Int(fixed.uint64(at: 0x38))
+        // Untrusted sizes: keep them in range before converting or allocating.
+        guard let volume = Int(exactly: fixed.uint64(at: 0x30)), volume <= 0xFFFF,
+              let fileCount = Int(exactly: fixed.uint64(at: 0x38)), fileCount <= 1 << 20,
+              let listSize = Int(exactly: fixed.uint64(at: 0x48)), listSize <= 64 << 20 else {
+            throw ReadError.truncated
+        }
         let listOffset = fixed.uint64(at: 0x40)
-        let listSize = Int(fixed.uint64(at: 0x48))
         let dataOffset = fixed.uint64(at: 0x50)
         let dataSize = fixed.uint64(at: 0x58)
 
@@ -76,6 +81,8 @@ public struct Par1Header: Equatable, Sendable {
             throw ReadError.truncated
         }
         let entries = try parseEntries(list, expectedCount: fileCount)
+        // Protected files are GF(2^8) elements; more than 255 cannot be a valid set.
+        guard entries.count(where: \.isProtected) <= 255 else { throw ReadError.truncated }
 
         if verifyControlHash {
             try handle.seek(toOffset: 0x20)
@@ -89,20 +96,28 @@ public struct Par1Header: Equatable, Sendable {
         return Par1Header(volumeNumber: volume, setHash: setHash, entries: entries, dataOffset: dataOffset, dataSize: dataSize)
     }
 
+    /// PAR1 sets list bare file names. Drop any directory part, so a crafted set
+    /// cannot make a repair write outside its folder.
+    static func safeFileName(_ name: String) throws -> String {
+        let base = name.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last.map(String.init) ?? ""
+        guard !base.isEmpty, base != ".", base != "..", !base.contains("\0") else { throw ReadError.unsafeFileName }
+        return base
+    }
+
     private static func parseEntries(_ list: Data, expectedCount: Int) throws -> [Par1Entry] {
         var entries: [Par1Entry] = []
         var offset = list.startIndex
         while offset < list.endIndex {
             guard offset + entryFixedSize <= list.endIndex else { throw ReadError.truncated }
             let relative = offset - list.startIndex
-            let entrySize = Int(list.uint64(at: relative))
-            guard entrySize >= entryFixedSize, offset + entrySize <= list.endIndex else { throw ReadError.truncated }
+            let entrySize = Int(clamping: list.uint64(at: relative))
+            guard entrySize >= entryFixedSize, entrySize <= list.endIndex - offset else { throw ReadError.truncated }
             let status = list.uint64(at: relative + 0x08)
             let size = list.uint64(at: relative + 0x10)
             let md5 = Data(list[(offset + 0x18)..<(offset + 0x28)])
             let md5First16K = Data(list[(offset + 0x28)..<(offset + 0x38)])
             let nameBytes = list[(offset + entryFixedSize)..<(offset + entrySize)]
-            let name = String(decoding: nameBytes.utf16LittleEndianUnits(), as: UTF16.self)
+            let name = try safeFileName(String(decoding: nameBytes.utf16LittleEndianUnits(), as: UTF16.self))
             entries.append(Par1Entry(name: name, size: size, md5: md5, md5First16K: md5First16K, isProtected: status & 1 != 0))
             offset += entrySize
         }

@@ -58,6 +58,20 @@ struct Par2FileReaderTests {
         #expect(files.allSatisfy { $0.length == 300_000 })
     }
 
+    @Test func shortFileDescPacketDoesNotCrash() {
+        var packet = Data("PAR2\0PKT".utf8)
+        packet.append(contentsOf: [64, 0, 0, 0, 0, 0, 0, 0])
+        packet.append(Data(count: 32))
+        packet.append(Data("PAR 2.0\0FileDesc".utf8))
+        #expect(Par2FileReader.fileDescriptions(in: packet).isEmpty)
+    }
+
+    @Test func escapesTraversalNames() {
+        #expect(Par2FileReader.displayName("../evil.bin") == "%2E%2E/evil.bin")
+        #expect(Par2FileReader.displayName("/etc/x") == "etc/x")
+        #expect(Par2FileReader.displayName("sub/file.bin") == "sub/file.bin")
+    }
+
     @Test func ignoresNonParData() {
         #expect(Par2FileReader.fileDescriptions(in: Data(repeating: 0x41, count: 4096)).isEmpty)
     }
