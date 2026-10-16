@@ -8,14 +8,42 @@ public enum Par2Command: Sendable {
     case create(parFile: URL, sourceFiles: [URL], options: Par2CreateOptions)
 
     public var arguments: [String] {
+        arguments(fileList: nil)
+    }
+
+    /// The source or extra files. There can be thousands, more than fit on a command line.
+    public var listedFiles: [URL] {
         switch self {
-        case let .verify(parFile, extraFiles):
-            ["v", "-B\(parFile.deletingLastPathComponent().path)", "--", parFile.path] + extraFiles.map(\.path)
-        case let .repair(parFile, extraFiles):
-            ["r", "-B\(parFile.deletingLastPathComponent().path)", "--", parFile.path] + extraFiles.map(\.path)
-        case let .create(parFile, sourceFiles, options):
-            ["c", "-B\(parFile.deletingLastPathComponent().path)"] + options.arguments + ["--", parFile.path] + sourceFiles.map(\.path)
+        case let .verify(_, files), let .repair(_, files), let .create(_, files, _): files
         }
+    }
+
+    /// Arguments with the listed files read from `fileList` (one path per line, par2's `@file`)
+    /// instead of passed one by one. Files whose path contains a line break stay on the command line.
+    public func arguments(fileList: URL?) -> [String] {
+        let files: [String]
+        if let fileList {
+            files = ["@" + fileList.path] + listedFiles.map(\.path).filter(Self.needsCommandLine)
+        } else {
+            files = listedFiles.map(\.path)
+        }
+        switch self {
+        case let .verify(parFile, _):
+            return ["v", "-B\(parFile.deletingLastPathComponent().path)", "--", parFile.path] + files
+        case let .repair(parFile, _):
+            return ["r", "-B\(parFile.deletingLastPathComponent().path)", "--", parFile.path] + files
+        case let .create(parFile, _, options):
+            return ["c", "-B\(parFile.deletingLastPathComponent().path)"] + options.arguments + ["--", parFile.path] + files
+        }
+    }
+
+    /// Contents for the `@file` list: every listed path that can go on its own line.
+    public var fileListContents: String {
+        listedFiles.map(\.path).filter { !Self.needsCommandLine($0) }.map { $0 + "\n" }.joined()
+    }
+
+    static func needsCommandLine(_ path: String) -> Bool {
+        path.contains("\n") || path.contains("\r")
     }
 
     public var workingDirectory: URL {

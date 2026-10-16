@@ -4,6 +4,11 @@ import Foundation
 public enum Par2Event: Equatable, Sendable {
     case loading(parFile: String)
     case progress(phase: String, percent: Double)
+    /// par2 starts reading a source (create) or target/extra file (verify, repair).
+    /// Creating prints no percentage while it reads, so counting these is the only progress.
+    case openingFile(String)
+    /// Number of source files of a set being created.
+    case sourceFileCount(Int)
     case statistics(Par2Statistics)
     case target(name: String, state: TargetFileState)
     /// An extra file whose contents belong to a target under another name.
@@ -33,6 +38,16 @@ public struct Par2OutputParser: Sendable {
         }
         if let (phase, percent) = progress(line) {
             return [.progress(phase: phase, percent: percent)]
+        }
+        if rawLine.hasPrefix("Opening: ") {
+            var name = String(rawLine.dropFirst("Opening: ".count))
+            if name.count >= 2, name.hasPrefix("\""), name.hasSuffix("\"") {
+                name = String(name.dropFirst().dropLast())
+            }
+            return [.openingFile(name), .other(line)]
+        }
+        if line.hasPrefix("Source file count:"), let count = integers(in: line).first {
+            return [.sourceFileCount(count), .other(line)]
         }
         if line.hasPrefix("Target: \"") {
             return targetEvents(line)

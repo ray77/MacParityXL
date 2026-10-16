@@ -71,6 +71,7 @@ struct BlockBalanceView: View {
         VStack(alignment: .leading, spacing: 6) {
             row(label: balance.unit == .blocks ? String(localized: "Data") : String(localized: "Files"),
                 value: "\(balance.present + balance.repaired) / \(balance.total)",
+                share: Double(balance.present + balance.repaired) / Double(max(balance.total, 1)),
                 segments: [
                     Segment(count: balance.present, color: Self.presentColor),
                     Segment(count: balance.repaired, color: Self.repairedColor),
@@ -78,18 +79,20 @@ struct BlockBalanceView: View {
                 ])
             row(label: String(localized: "Recovery"),
                 value: balance.shortfall > 0 ? "\(balance.recovery) / \(balance.recovery + balance.shortfall)" : "\(balance.recovery)",
+                // Redundancy: recovery data relative to the data it protects.
+                share: Double(balance.recovery) / Double(max(balance.total, 1)),
                 segments: [
                     Segment(count: balance.recovery, color: Self.recoveryColor),
                     Segment(count: balance.shortfall, color: Self.missingColor, hatched: true),
                 ])
             legend
         }
-        .frame(width: 270)
+        .frame(width: 316)
         .help(helpText)
         .animation(.easeInOut(duration: 0.35), value: balance)
     }
 
-    private func row(label: String, value: String, segments: [Segment]) -> some View {
+    private func row(label: String, value: String, share: Double, segments: [Segment]) -> some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.caption.weight(.medium))
@@ -104,7 +107,20 @@ struct BlockBalanceView: View {
                 .frame(width: 62, alignment: .trailing)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+            Text(Self.percent(share))
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .frame(width: 38, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+    }
+
+    /// Rounded down, with a decimal near 0 and 100 %, so a set missing one block never reads "100 %".
+    private static func percent(_ share: Double) -> String {
+        let digits = (share > 0 && share < 0.1) || (share > 0.99 && share < 1) ? 1 : 0
+        let factor = digits == 1 ? 1000.0 : 100.0
+        let value = (share * factor).rounded(.down) / factor
+        return value.formatted(.percent.precision(.fractionLength(digits)))
     }
 
     private var legend: some View {

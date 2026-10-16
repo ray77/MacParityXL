@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 struct ParSetView: View {
     @Bindable var model: ParSetModel
     var onAddFiles: ([URL]) -> Void
+    @State private var sortOrder = [KeyPathComparator(\ParSetRow.name, comparator: .localizedStandard)]
 
     var body: some View {
         VSplitView {
@@ -40,10 +41,10 @@ struct ParSetView: View {
     }
 
     private var fileTable: some View {
-        Table(rows, selection: $model.selection) {
-            TableColumn("File") { row in
+        Table(rows, selection: $model.selection, sortOrder: $sortOrder) {
+            TableColumn("File", value: \.name, comparator: .localizedStandard) { row in
                 switch row {
-                case .data(let file):
+                case .data(let file, _):
                     FileNameCell(name: file.name, dimmed: false)
                 case .recovery(let file):
                     FileNameCell(name: file.name, dimmed: true)
@@ -51,11 +52,11 @@ struct ParSetView: View {
             }
             .width(min: 160, ideal: 250)
 
-            TableColumn("Size") { row in
+            TableColumn("Size", value: \.size) { row in
                 Group {
                     switch row {
-                    case .data(let file):
-                        Text(model.fileSizes[file.name].map { $0.formatted(.byteCount(style: .file)) } ?? "–")
+                    case .data(_, let size):
+                        Text(size.map { $0.formatted(.byteCount(style: .file)) } ?? "–")
                     case .recovery(let file):
                         Text(file.size.formatted(.byteCount(style: .file)))
                     }
@@ -66,9 +67,9 @@ struct ParSetView: View {
             }
             .width(min: 64, ideal: 76, max: 110)
 
-            TableColumn("Status") { row in
+            TableColumn("Status", value: \.statusRank) { row in
                 switch row {
-                case .data(let file):
+                case .data(let file, _):
                     HStack(spacing: 6) {
                         StatusBadge(state: file.state, isRunning: model.isRunning)
                         if !file.contributesToParity {
@@ -84,6 +85,13 @@ struct ParSetView: View {
         }
         .tableStyle(.inset)
         .alternatingRowBackgrounds(.disabled)
+        .contextMenu(forSelectionType: String.self) { names in
+            if !names.isEmpty {
+                Button("Show in Finder") { model.revealInFinder(names) }
+            }
+        } primaryAction: { names in
+            model.revealInFinder(names)
+        }
         .dropDestination(for: URL.self) { urls, _ in
             guard model.parFile == nil else { return false }
             onAddFiles(urls)
@@ -91,9 +99,12 @@ struct ParSetView: View {
         }
     }
 
-    /// Data files first, then the set's own par files.
+    /// Data files in the chosen order, then the set's own par files, which always stay last.
     private var rows: [ParSetRow] {
-        model.files.map(ParSetRow.data) + model.recoveryFiles.map(ParSetRow.recovery)
+        let data = model.files.map { ParSetRow.data($0, size: model.fileSizes[$0.name]) }
+        // Equal sizes or states keep the name order.
+        let order = sortOrder + [KeyPathComparator(\ParSetRow.name, comparator: .localizedStandard)]
+        return data.sorted(using: order) + model.recoveryFiles.map(ParSetRow.recovery)
     }
 }
 
@@ -129,7 +140,12 @@ private struct StatusBar: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if !model.files.isEmpty {
-                        figures
+                        // Drop the less important sizes first when the window is narrow.
+                        ViewThatFits(in: .horizontal) {
+                            figures(sizes: true, recovery: true)
+                            figures(sizes: true, recovery: false)
+                            figures(sizes: false, recovery: false)
+                        }
                     }
                 }
                 Spacer(minLength: 12)
@@ -160,13 +176,18 @@ private struct StatusBar: View {
         }
     }
 
-    @ViewBuilder
-    private var figures: some View {
-        HStack(spacing: 18) {
+    private func figures(sizes: Bool, recovery: Bool) -> some View {
+        HStack(spacing: 16) {
             switch model.format {
             case .par2:
                 Figure("Total", "\(model.files.count)")
                 Figure("Good", "\(model.goodFileCount)")
+                if sizes {
+                    Figure("Size", dataSize.formatted(.byteCount(style: .file)))
+                }
+                if recovery && recoverySize > 0 {
+                    Figure("Recovery", recoverySize.formatted(.byteCount(style: .file)))
+                }
                 if let blocks = model.statistics.missingRecoveryBlocks, let bytes = model.statistics.missingBytes {
                     Figure("Need", String(localized: "\(blocks) blocks = \(bytes.formatted(.byteCount(style: .file)))"), tint: .red)
                 }
@@ -175,9 +196,22 @@ private struct StatusBar: View {
                 Figure("Damaged files", "\(model.damagedFileCount)", tint: model.damagedFileCount > 0 ? .orange : nil)
                 Figure("Missing files", "\(model.missingFileCount)", tint: model.missingFileCount > 0 ? .orange : nil)
                 Figure("Recovery files", "\(model.par1VolumeCount)")
+                if sizes {
+                    Figure("Size", dataSize.formatted(.byteCount(style: .file)))
+                }
             }
         }
         .font(.callout)
+    }
+
+    /// Size of the data files, known from the par file even for missing ones.
+    private var dataSize: Int64 {
+        model.files.reduce(0) { $0 + (model.fileSizes[$1.name] ?? 0) }
+    }
+
+    /// Size of the set's own par files.
+    private var recoverySize: Int64 {
+        model.recoveryFiles.reduce(0) { $0 + $1.size }
     }
 
     /// The engine's phase ("Scanning", "Repairing", …), or what the window is doing before it reports one.
@@ -196,6 +230,7 @@ private struct StatusBar: View {
         switch phase {
         case "Loading": String(localized: "Loading")
         case "Opening": String(localized: "Opening")
+        case "Reading files": String(localized: "Reading files")
         case "Scanning": String(localized: "Scanning")
         case "Verifying": String(localized: "Verifying")
         case "Repairing": String(localized: "Repairing")
@@ -229,19 +264,50 @@ private struct Figure: View {
                 .monospacedDigit()
                 .foregroundStyle(tint ?? .primary)
         }
+        .lineLimit(1)
+        .fixedSize()
     }
 }
 
 // MARK: - Table cells
 
 private enum ParSetRow: Identifiable {
-    case data(TargetFile)
+    case data(TargetFile, size: Int64?)
     case recovery(RecoveryFile)
 
     var id: String {
         switch self {
-        case .data(let file): file.id
+        case .data(let file, _): file.id
         case .recovery(let file): file.id
+        }
+    }
+
+    var name: String {
+        switch self {
+        case .data(let file, _): file.name
+        case .recovery(let file): file.name
+        }
+    }
+
+    var size: Int64 {
+        switch self {
+        case .data(_, let size): size ?? -1
+        case .recovery(let file): file.size
+        }
+    }
+
+    /// Problems first when sorted ascending, then files still being checked, then good ones.
+    var statusRank: Int {
+        guard case .data(let file, _) = self else { return 99 }
+        return switch file.state {
+        case .unrecoverable: 0
+        case .missing, .damaged: 1
+        case .recoverable: 2
+        case .pending, .checking: 3
+        case .repaired: 4
+        case .okAfterRenaming: 5
+        case .ok: 6
+        case .notInParSet: 7
         }
     }
 }

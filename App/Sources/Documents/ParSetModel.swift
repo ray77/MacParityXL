@@ -199,7 +199,7 @@ final class ParSetModel {
         let process = Par2Process(executable: BundledTools.par2, command: command)
         self.process = process
 
-        let updates: AsyncStream<Par2Process.Update>
+        let updates: AsyncStream<[Par2Process.Update]>
         do {
             updates = try process.run()
         } catch {
@@ -208,16 +208,19 @@ final class ParSetModel {
         }
 
         var outcome: ParRunOutcome?
-        for await update in updates {
-            switch update {
-            case .rawLine(let line):
-                rawOutput += line + "\n"
-            case .event(let event):
-                if let newOutcome = apply(event) {
-                    outcome = newOutcome
+        // One batch per pass, so its changes reach the UI as a single update.
+        for await batch in updates {
+            for update in batch {
+                switch update {
+                case .rawLine(let line):
+                    rawOutput += line + "\n"
+                case .event(let event):
+                    if let newOutcome = apply(event) {
+                        outcome = newOutcome
+                    }
+                case let .finished(exitCode, canceled):
+                    status = finalStatus(outcome: outcome, exitCode: exitCode, canceled: canceled)
                 }
-            case let .finished(exitCode, canceled):
-                status = finalStatus(outcome: outcome, exitCode: exitCode, canceled: canceled)
             }
         }
     }
@@ -246,7 +249,7 @@ final class ParSetModel {
                 markRemainingProblems(recoverable: false)
             }
             return outcome
-        case .loading, .renamedMatch, .other:
+        case .loading, .renamedMatch, .openingFile, .sourceFileCount, .other:
             break
         }
         return nil
@@ -592,6 +595,21 @@ final class ParSetModel {
         return String(url.path.dropFirst(base.count))
     }
 
+    /// Selects the rows' files in Finder. Missing files are shown by their folder.
+    func revealInFinder(_ names: Set<String>) {
+        guard let folder = parFile?.deletingLastPathComponent() ?? sourceFolder else { return }
+        var urls: [URL] = []
+        for name in names.sorted() {
+            var url = folder.appending(path: name)
+            // A missing file (or one in a missing subfolder): show the nearest folder that exists.
+            while !FileManager.default.fileExists(atPath: url.path), url.path.count > folder.path.count {
+                url = url.deletingLastPathComponent()
+            }
+            if !urls.contains(url) { urls.append(url) }
+        }
+        NSWorkspace.shared.activateFileViewerSelecting(urls)
+    }
+
     func removeFiles(named names: Set<String>) {
         files.removeAll { names.contains($0.name) }
         selection.subtract(names)
@@ -626,25 +644,37 @@ final class ParSetModel {
             return
         }
         var created = false
-        for await update in updates {
-            switch update {
-            case .rawLine(let line):
-                rawOutput += line + "\n"
-            case .event(.progress(let phase, let percent)):
-                progress = (phase, percent)
-            case .event(.outcome(.created)):
-                created = true
-            case .event:
-                break
-            case let .finished(exitCode, canceled):
-                if canceled {
-                    status = .canceled
-                } else if created && exitCode == 0 {
-                    status = .created
-                    self.parFile = parFile
-                    for index in files.indices { files[index].state = .ok }
-                } else {
-                    status = .failed(String(localized: "par2 failed (\(exitCode))."))
+        // par2 prints no percentage while it reads and hashes the sources, which takes most of
+        // the time for big folders; count the files it opens instead.
+        var sourceCount = sources.count
+        var openedCount = 0
+        // One batch per pass, so its changes reach the UI as a single update.
+        for await batch in updates {
+            for update in batch {
+                switch update {
+                case .rawLine(let line):
+                    rawOutput += line + "\n"
+                case .event(.progress(let phase, let percent)):
+                    progress = (phase, percent)
+                case .event(.sourceFileCount(let count)):
+                    sourceCount = max(count, 1)
+                case .event(.openingFile):
+                    openedCount += 1
+                    progress = ("Reading files", min(Double(openedCount) / Double(max(sourceCount, 1)), 1) * 100)
+                case .event(.outcome(.created)):
+                    created = true
+                case .event:
+                    break
+                case let .finished(exitCode, canceled):
+                    if canceled {
+                        status = .canceled
+                    } else if created && exitCode == 0 {
+                        status = .created
+                        self.parFile = parFile
+                        for index in files.indices { files[index].state = .ok }
+                    } else {
+                        status = .failed(String(localized: "par2 failed (\(exitCode))."))
+                    }
                 }
             }
         }

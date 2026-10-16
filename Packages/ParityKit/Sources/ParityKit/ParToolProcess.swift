@@ -17,17 +17,26 @@ public final class Par2Process: Sendable {
         self.command = command
     }
 
-    /// Starts the process. The stream finishes after `.finished`.
-    public func run() throws -> AsyncStream<Update> {
+    /// Starts the process. The stream delivers updates in batches, at most about ten a second:
+    /// par2 prints a line per file, and handling each one separately keeps a UI busy redrawing
+    /// long after par2 is done. The last batch ends with `.finished`.
+    public func run(batchInterval: TimeInterval = 0.1) throws -> AsyncStream<[Update]> {
+        // Process throws an Objective-C exception (not a Swift error) for a missing executable
+        // or an oversized command line, so rule both out first.
+        guard FileManager.default.isExecutableFile(atPath: executable.path) else {
+            throw CocoaError(.fileNoSuchFile, userInfo: [NSFilePathErrorKey: executable.path])
+        }
+        let fileList = try writeFileList()
         let pipe = Pipe()
         process.executableURL = executable
-        process.arguments = command.arguments
+        process.arguments = command.arguments(fileList: fileList)
         process.currentDirectoryURL = command.workingDirectory
         process.standardOutput = pipe
         process.standardError = pipe
 
-        let (stream, continuation) = AsyncStream<Update>.makeStream()
+        let (stream, continuation) = AsyncStream<[Update]>.makeStream()
         let reader = OutputReader()
+        let batcher = UpdateBatcher(continuation: continuation, interval: batchInterval)
 
         pipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
@@ -35,29 +44,87 @@ public final class Par2Process: Sendable {
                 handle.readabilityHandler = nil
                 return
             }
-            for update in reader.consume(data) {
-                continuation.yield(update)
-            }
+            batcher.add(reader.consume(data))
         }
         process.terminationHandler = { process in
+            if let fileList { try? FileManager.default.removeItem(at: fileList) }
             pipe.fileHandleForReading.readabilityHandler = nil
             let remaining = pipe.fileHandleForReading.readDataToEndOfFile()
-            for update in reader.consume(remaining) + reader.finish() {
-                continuation.yield(update)
-            }
             let canceled = process.terminationReason == .uncaughtSignal
-            continuation.yield(.finished(exitCode: process.terminationStatus, canceled: canceled))
-            continuation.finish()
+            batcher.finish(with: reader.consume(remaining) + reader.finish()
+                + [.finished(exitCode: process.terminationStatus, canceled: canceled)])
         }
 
-        try process.run()
+        do {
+            try process.run()
+        } catch {
+            if let fileList { try? FileManager.default.removeItem(at: fileList) }
+            throw error
+        }
         return stream
+    }
+
+    /// Writes the listed files to a temporary `@file`, or returns nil if there are none.
+    private func writeFileList() throws -> URL? {
+        let contents = command.fileListContents
+        guard !contents.isEmpty else { return nil }
+        let url = FileManager.default.temporaryDirectory.appending(path: "MacParityXL-files-\(UUID().uuidString).txt")
+        try contents.write(to: url, atomically: true, encoding: .utf8)
+        return url
     }
 
     public func cancel() {
         if process.isRunning {
             process.terminate()
         }
+    }
+}
+
+/// Collects updates and hands them on together after `interval`.
+private final class UpdateBatcher: @unchecked Sendable {
+    private let lock = NSLock()
+    private let continuation: AsyncStream<[Par2Process.Update]>.Continuation
+    private let interval: TimeInterval
+    private var pending: [Par2Process.Update] = []
+    private var flushScheduled = false
+    private var finished = false
+
+    init(continuation: AsyncStream<[Par2Process.Update]>.Continuation, interval: TimeInterval) {
+        self.continuation = continuation
+        self.interval = interval
+    }
+
+    func add(_ updates: [Par2Process.Update]) {
+        guard !updates.isEmpty else { return }
+        lock.withLock {
+            guard !finished else { return }
+            pending += updates
+            guard !flushScheduled else { return }
+            flushScheduled = true
+            DispatchQueue.global().asyncAfter(deadline: .now() + interval) { [self] in
+                lock.withLock {
+                    flushScheduled = false
+                    flushLocked()
+                }
+            }
+        }
+    }
+
+    func finish(with updates: [Par2Process.Update]) {
+        lock.withLock {
+            guard !finished else { return }
+            pending += updates
+            flushLocked()
+            finished = true
+            continuation.finish()
+        }
+    }
+
+    /// Yields under the lock so batches keep their order; yielding never blocks.
+    private func flushLocked() {
+        guard !pending.isEmpty, !finished else { return }
+        continuation.yield(pending)
+        pending = []
     }
 }
 
